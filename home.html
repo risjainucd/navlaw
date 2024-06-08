@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSR Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input,
+        textarea,
+        select {
+            padding: 8px;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .row-input {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .row-input label,
+        .row-input input {
+            flex: 1;
+            margin: 5px;
+        }
+
+        .delete-btn {
+            cursor: pointer;
+            color: red;
+        }
+
+        .mutation-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .mutation-row label,
+        .mutation-row input,
+        .mutation-row textarea {
+            flex: 1;
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>TSR Generator</h1>
+    <form id="tsrForm">
+        <table id="inputTable">
+            <thead>
+                <tr>
+                    <th>CY Start</th>
+                    <th>CY End</th>
+                    <th>Khasra No.</th>
+                    <th>Ownership</th>
+                    <th>Area</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="yearRow1">
+                    <td rowspan="1" id="cyStartCell1"><input type="number" id="calendarYearStart1"
+                            name="calendarYearStart1" value="2020" required></td>
+                    <td rowspan="1" id="cyEndCell1"><input type="number" id="calendarYearEnd1" name="calendarYearEnd1"
+                            value="2023" required></td>
+                    <td><input type="text" id="khasraNo1_1" name="khasraNo1_1" value="1" required></td>
+                    <td><input type="text" id="ownership1_1" name="ownership1_1" value="Owner" required></td>
+                    <td><input type="text" id="area1_1" name="area1_1" value="20" required></td>
+                    <td><span class="delete-btn" onclick="deleteRow(this)">Delete</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button type="button" onclick="addYear()">Add Next Year</button>
+        <button type="button" onclick="addMutation()">Add Mutation</button>
+        <button type="button" onclick="addKhasra()">Add More Khasra No.</button>
+        <button type="button" onclick="generateReport()">Generate Report</button>
+    </form>
+
+    <h2>Generated Report</h2>
+    <pre id="generatedReport"></pre>
+
+    <script>
+        let yearCount = 1;
+        let khasraCount = 1; // starting with 1 due to the initial 1 row
+        let mutationCount = 0;
+
+        function addYear() {
+            yearCount++;
+            const prevCYEnd = document.getElementById(`calendarYearEnd${yearCount - 1}`);
+            if (!prevCYEnd) {
+                console.error(`Element with ID 'calendarYearEnd${yearCount - 1}' not found`);
+                return;
+            }
+            const nextCYStart = parseInt(prevCYEnd.value) + 1;
+            const nextCYEnd = nextCYStart + 3;
+
+            const inputTable = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
+
+            // Create new rows for each existing khasra
+            for (let i = 1; i <= khasraCount; i++) {
+                const prevKhasraNoElement = document.getElementById(`khasraNo${yearCount - 1}_${i}`);
+                const prevOwnershipElement = document.getElementById(`ownership${yearCount - 1}_${i}`);
+                const prevAreaElement = document.getElementById(`area${yearCount - 1}_${i}`);
+
+                if (!prevKhasraNoElement || !prevOwnershipElement || !prevAreaElement) {
+                    console.error(`Required elements not found in row: ${i}`);
+                    continue;
+                }
+
+                const prevKhasraNo = prevKhasraNoElement.value;
+                const prevOwnership = prevOwnershipElement.value;
+                const prevArea = prevAreaElement.value;
+
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td ${i === 1 ? `rowspan="${khasraCount}" id="cyStartCell${yearCount}"` : ''}><input type="number" id="calendarYearStart${yearCount}" name="calendarYearStart${yearCount}" value="${nextCYStart}" required ${i === 1 ? '' : 'style="display:none;"'}></td>
+                    <td ${i === 1 ? `rowspan="${khasraCount}" id="cyEndCell${yearCount}"` : ''}><input type="number" id="calendarYearEnd${yearCount}" name="calendarYearEnd${yearCount}" value="${nextCYEnd}" required ${i === 1 ? '' : 'style="display:none;"'}></td>
+                    <td><input type="text" id="khasraNo${yearCount}_${i}" name="khasraNo${yearCount}_${i}" value="${prevKhasraNo}" required></td>
+                    <td><input type="text" id="ownership${yearCount}_${i}" name="ownership${yearCount}_${i}" value="${prevOwnership}" required></td>
+                    <td><input type="text" id="area${yearCount}_${i}" name="area${yearCount}_${i}" value="${prevArea}" required></td>
+                    <td><span class="delete-btn" onclick="deleteRow(this)">Delete</span></td>
+                `;
+                inputTable.appendChild(newRow);
+            }
+        }
+
+        function addMutation() {
+            mutationCount++;
+            const inputTable = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td colspan="6">
+                    <div class="mutation-row">
+                        <label for="mutationNumber${mutationCount}">Mutation Number:</label>
+                        <input type="text" id="mutationNumber${mutationCount}" name="mutationNumber${mutationCount}" required>
+                        <label for="mutationDate${mutationCount}">Date of Mutation:</label>
+                        <input type="date" id="mutationDate${mutationCount}" name="mutationDate${mutationCount}" required>
+                        <label for="mutationDescription${mutationCount}">Description of Event:</label>
+                        <textarea id="mutationDescription${mutationCount}" name="mutationDescription${mutationCount}" required></textarea>
+                        <label for="mutationChange${mutationCount}">Change:</label>
+                        <textarea id="mutationChange${mutationCount}" name="mutationChange${mutationCount}" required></textarea>
+                        <span class="delete-btn" onclick="deleteRow(this)">Delete</span>
+                    </div>
+                </td>
+            `;
+            inputTable.appendChild(newRow);
+        }
+
+        function addKhasra() {
+            khasraCount++;
+            const inputTable = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
+            const cyStartCell = document.getElementById(`cyStartCell${yearCount}`);
+            const cyEndCell = document.getElementById(`cyEndCell${yearCount}`);
+
+            cyStartCell.rowSpan += 1;
+            cyEndCell.rowSpan += 1;
+
+            const prevKhasraNo = document.getElementById(`khasraNo${yearCount}_${khasraCount - 1}`).value;
+            const prevOwnership = document.getElementById(`ownership${yearCount}_${khasraCount - 1}`).value;
+            const prevArea = document.getElementById(`area${yearCount}_${khasraCount - 1}`).value;
+
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td><input type="text" id="khasraNo${yearCount}_${khasraCount}" name="khasraNo${yearCount}_${khasraCount}" value="${prevKhasraNo}" required></td>
+                <td><input type="text" id="ownership${yearCount}_${khasraCount}" name="ownership${yearCount}_${khasraCount}" value="${prevOwnership}" required></td>
+                <td><input type="text" id="area${yearCount}_${khasraCount}" name="area${yearCount}_${khasraCount}" value="${prevArea}" required></td>
+                <td><span class="delete-btn" onclick="deleteRow(this)">Delete</span></td>
+            `;
+            inputTable.appendChild(newRow);
+        }
+
+        function deleteRow(button) {
+            const row = button.parentNode.parentNode; // Adjusted to handle both regular and mutation rows
+            const table = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
+            if (table.rows.length === 1) {
+                // Clear the content if it's the last row
+                row.querySelectorAll('input, textarea').forEach(input => input.value = '');
+            } else {
+                row.parentNode.removeChild(row);
+            }
+        }
+
+        function generateReport() {
+            let reportTemplate = '';
+
+            for (let y = 1; y <= yearCount; y++) {
+                const calendarYearStartElement = document.getElementById(`calendarYearStart${y}`);
+                const calendarYearEndElement = document.getElementById(`calendarYearEnd${y}`);
+
+                if (!calendarYearStartElement || !calendarYearEndElement) {
+                    console.error(`Year elements not found for year count ${y}`);
+                    continue;
+                }
+
+                const calendarYearStart = parseInt(calendarYearStartElement.value);
+                const calendarYearEnd = parseInt(calendarYearEndElement.value);
+                const samvatYearStart = calendarYearStart + 57;
+                const samvatYearEnd = calendarYearEnd + 57;
+
+                reportTemplate += `Jamabandi of Samvat ${samvatYearStart}-${samvatYearEnd} corresponding to the Calendar Year ${calendarYearStart}-${calendarYearEnd} reflects\n`;
+
+                let khasraEntries = '';
+                let ownershipEntries = new Set();
+                let khasraFound = false;
+
+                for (let i = 1; i <= khasraCount; i++) {
+                    const khasraNoElement = document.getElementById(`khasraNo${y}_${i}`);
+                    const ownershipElement = document.getElementById(`ownership${y}_${i}`);
+                    const areaElement = document.getElementById(`area${y}_${i}`);
+
+                    if (khasraNoElement && ownershipElement && areaElement) {
+                        const khasraNo = khasraNoElement.value;
+                        const ownership = ownershipElement.value;
+                        const area = areaElement.value;
+
+                        khasraEntries += `Khasra no. ${khasraNo} area measuring ${area} Hectare\n`;
+                        ownershipEntries.add(ownership);
+                        khasraFound = true;
+                    }
+                }
+
+                if (khasraFound) {
+                    const ownershipList = Array.from(ownershipEntries).join(', ');
+                    reportTemplate += `${khasraEntries}are recorded in name of ${ownershipList} as Khatedar.\n\n`;
+                } else {
+                    reportTemplate += `No Khasra records found for this period.\n\n`;
+                }
+            }
+
+            for (let m = 1; m <= mutationCount; m++) {
+                const mutationNumberElement = document.getElementById(`mutationNumber${m}`);
+                const mutationDateElement = document.getElementById(`mutationDate${m}`);
+                const mutationDescriptionElement = document.getElementById(`mutationDescription${m}`);
+                const mutationChangeElement = document.getElementById(`mutationChange${m}`);
+
+                if (mutationNumberElement && mutationDateElement && mutationDescriptionElement && mutationChangeElement) {
+                    const mutationNumber = mutationNumberElement.value;
+                    const mutationDate = mutationDateElement.value;
+                    const mutationDescription = mutationDescriptionElement.value;
+                    const mutationChange = mutationChangeElement.value;
+
+                    reportTemplate += `• Mutation no. ${mutationNumber} dated ${mutationDate} ${mutationDescription}. Change: ${mutationChange}\n\n`;
+                } else {
+                    console.error(`Mutation elements not found for mutation count ${m}`);
+                }
+            }
+
+            document.getElementById('generatedReport').innerHTML = reportTemplate;
+        }
+    </script>
+</body>
+
+</html>
