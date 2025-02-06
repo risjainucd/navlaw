@@ -1,282 +1,410 @@
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TSR Generator</title>
+    <script src="https://unpkg.com/docx@8.2.3/build/index.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-
-        input,
-        textarea,
-        select {
-            padding: 8px;
-            margin-top: 5px;
-        }
-
-        button {
-            padding: 10px 20px;
-            margin-top: 20px;
-            cursor: pointer;
-        }
-
-        table,
-        th,
-        td {
-            border: 1px solid black;
-            border-collapse: collapse;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .row-input {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .row-input label,
-        .row-input input {
-            flex: 1;
-            margin: 5px;
-        }
-
-        .delete-btn {
-            cursor: pointer;
-            color: red;
-        }
-
-        .mutation-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .mutation-row label,
-        .mutation-row input,
-        .mutation-row textarea {
-            flex: 1;
-            margin: 5px;
+        .no-bullet {
+            list-style-type: none;
+            font-weight: normal;
+            font-size:12px;
         }
     </style>
 </head>
-
 <body>
-    <h1>TSR Generator</h1>
-    <form id="tsrForm">
-        <table id="inputTable">
+    <h2>TSR Generator</h2>
+    <div style="margin: 20px 0;"></div>
+        <label for="lawFirm">Law Firm:</label> <!-- New input for Law Firm -->
+        <input type="text" id="lawFirm"/> <!-- New input field -->
+    </div>
+    <div style="margin: 20px 0; display: flex; gap: 20px;">
+        <div>
+            <label for="refNo">Reference Number:</label>
+            <input type="text" id="refNo"/>
+        </div>
+        <div>
+            <label for="dateInput">Date:</label>
+            <input type="date" id="dateInput"/>
+        </div>
+    </div>
+    <div style="margin: 20px 0;">
+        <label for="toAddress">To Address:</label>
+        <textarea id="toAddress" style="width: 100%; height: 80px;"></textarea>
+    </div>
+    <div style="margin: 20px 0; display: flex; gap: 20px;">
+        <div>
+            <label for="khasraNo">Khasra No:</label>
+            <input type="text" id="khasraNo"/>
+        </div>
+        <div>
+            <label for="village">Village:</label>
+            <input type="text" id="village"/>
+        </div>
+        <div>
+            <label for="tehsil">Tehsil:</label>
+            <input type="text" id="tehsil"/>
+        </div>
+        <div>
+            <label for="district">District:</label>
+            <input type="text" id="district"/>
+        </div>
+    </div>
+    <div style="margin: 20px 0; display: flex; gap: 20px;">
+        <div>
+            <label for="natureOfLand">Nature of Land & Soil:</label>
+            <input type="text" id="natureOfLand" value="Agricultural Land - Barani-II"/>
+        </div>
+        <div>
+            <label for="areaHectare">Area (Hectare):</label>
+            <input type="number" id="areaHectare" oninput="updateBigha()" />
+        </div>
+        <div>
+            <label for="areaBigha">Area (Bigha):</label>
+            <input type="text" id="areaBigha" />
+        </div>
+        <div>
+            <label for="khatedar">Khatedar:</label>
+            <textarea id="khatedar" rows="4" style="width: 100%;"></textarea>
+        </div>
+        <div>
+            <label for="boundaries">Boundaries:</label>
+            <input type="text" id="boundaries"/>
+        </div>
+    </div>
+    <button onclick="display()">Generate</button>
+    
+    <!-- Move container before download button -->
+    <div id="report-container" style="margin: 20px 0; border: 1px solid #ccc; padding: 20px;">
+    </div>
+    <button onclick="download()">Download</button>
+
+    <div style="margin: 20px 0;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;" id="data-table">
             <thead>
                 <tr>
-                    <th>CY Start</th>
-                    <th>CY End</th>
-                    <th>Khasra No.</th>
-                    <th>Ownership</th>
-                    <th>Area</th>
-                    <th>Actions</th>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Nature of Land & Classification of Soil</th>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Khasra No.</th>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Area (In Hectare)</th>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Area in Bigha</th>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Name of the Khatedar/Land Owner</th>
                 </tr>
             </thead>
             <tbody>
-                <tr id="yearRow1">
-                    <td rowspan="1" id="cyStartCell1"><input type="number" id="calendarYearStart1"
-                            name="calendarYearStart1" value="2020" required></td>
-                    <td rowspan="1" id="cyEndCell1"><input type="number" id="calendarYearEnd1" name="calendarYearEnd1"
-                            value="2023" required></td>
-                    <td><input type="text" id="khasraNo1_1" name="khasraNo1_1" value="1" required></td>
-                    <td><input type="text" id="ownership1_1" name="ownership1_1" value="Owner" required></td>
-                    <td><input type="text" id="area1_1" name="area1_1" value="20" required></td>
-                    <td><span class="delete-btn" onclick="deleteRow(this)">Delete</span></td>
+                <tr>
+                    <td style="border: 1px solid #ccc; padding: 8px; text-align: center;" id="natureOfLandPreview"></td>
+                    <td style="border: 1px solid #ccc; padding: 8px; text-align: center;" id="khasraNoPreview"></td>
+                    <td style="border: 1px solid #ccc; padding: 8px; text-align: center;" id="areaHectarePreview"></td>
+                    <td style="border: 1px solid #ccc; padding: 8px; text-align: center;" id="areaBighaPreview"></td>
+                    <td style="border: 1px solid #ccc; padding: 8px; text-align: center;" id="khatedarPreview"></td>
                 </tr>
             </tbody>
         </table>
-
-        <button type="button" onclick="addYear()">Add Next Year</button>
-        <button type="button" onclick="addMutation()">Add Mutation</button>
-        <button type="button" onclick="addKhasra()">Add More Khasra No.</button>
-        <button type="button" onclick="generateReport()">Generate Report</button>
-    </form>
-
-    <h2>Generated Report</h2>
-    <pre id="generatedReport"></pre>
+    </div>
 
     <script>
-        let yearCount = 1;
-        let khasraCount = 1; // starting with 1 due to the initial 1 row
-        let mutationCount = 0;
+        let generatedDoc; // Variable to store the generated document
 
-        function addYear() {
-            yearCount++;
-            const prevCYEnd = document.getElementById(`calendarYearEnd${yearCount - 1}`);
-            if (!prevCYEnd) {
-                console.error(`Element with ID 'calendarYearEnd${yearCount - 1}' not found`);
-                return;
-            }
-            const nextCYStart = parseInt(prevCYEnd.value) + 1;
-            const nextCYEnd = nextCYStart + 3;
+        async function display() {
+            const { Document, Paragraph, TextRun, Packer, AlignmentType, Table, TableCell, TableRow, VerticalAlign } = docx;
+            const lawFirm = document.getElementById('lawFirm').value;
+            const refNo = document.getElementById('refNo').value;
+            const dateInput = document.getElementById('dateInput').value;
+            const toAddress = document.getElementById('toAddress').value;
+            const khasraNo = document.getElementById('khasraNo').value;
+            const village = document.getElementById('village').value;
+            const tehsil = document.getElementById('tehsil').value;
+            const district = document.getElementById('district').value;
+            const areaHectare = document.getElementById('areaHectare').value;
+            const areaBigha = document.getElementById('areaBigha').value;
+            const khatedar = document.getElementById('khatedar').value;
+            const natureOfLand = document.getElementById('natureOfLand').value;
+            const formattedDate = dateInput ? new Date(dateInput).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).split('/').join('.') : '';
+            const container = document.getElementById('report-container');
+            
+            // Create the display content
+            const content = `
+                <div style="text-align: right"><strong>STRICTLY CONFIDENTIAL</strong></div>
+                <div>
+                    Ref. No. ${refNo}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Dated: - ${formattedDate}
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <strong><u>TITLE SEARCH REPORT</u></strong>
+                </div>
+                <div style="margin-top: 20px;">To,</div>
+  
+                <div style="margin-left: 40px;">${toAddress.split('\n').join('<br/>')}</div>
+                <div style="margin-top: 20px;"><strong>Sub:</strong>&nbsp;&nbsp;&nbsp;&nbsp;Preliminary Title Search Report of Khasra no. ${khasraNo} of Village ${village}, Tehsil ${tehsil} and District ${district}.</div>
+                <ul style="font-size: 14px; font-weight: bold;">
+                    <li>PREFACE</li>
+                    <ul style="font-size: 12px; font-weight: normal">
+                        <li>We, ${lawFirm} have been appointed as Legal Counsel (LC) in connection with Khasra no. ${khasraNo}of Village ${village}, Tehsil ${tehsil} and District ${district}, Leased by aforesaid company for installation of Solar Power Project. In relation thereto, we have prepared the Title Search Report (“Report”) with respect to said Agriculture land (“Immoveable Properties” or “said Property”).</li>
+                        <li>This title search report is addressed to and is solely for the benefit of the client and no other person shall act, rely on this report or any part thereof.</li>
+                    </ul>
+                    <li>DISCLAIMER AND ASSUMPTIONS:</li>
+                    <li class="no-bullet">This report has been prepared and is provided subject to specific assumptions and disclaimers outlined in Annexure-I, which is attached hereto and should be considered in conjunction with this Report.</li>
+                    <li>OBJECTIVE OF TITLE SEARCH</li>
+                    <li class="no-bullet">The objective of the present report is to search and inspect true copies of documents related to the above properties and provide a detailed title report including report on the pending litigations if any of the said Property.</li>
+                    <li>PROCEDURE</li>
+                    <li class="no-bullet">During course of Title search we were provided with true copies of documents/records related to the said property by various authorities such as sale deeds, Jamabandi records, mutation records and power of attorney and the observations made herein are based on the true copies of documents provided to us and perused during searches undertaken at the concerned offices.</li>
+                    <li>Description, Nature and Area of land with survey/plot numbers</li>
+                </ul>
 
-            const inputTable = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
-
-            // Create new rows for each existing khasra
-            for (let i = 1; i <= khasraCount; i++) {
-                const prevKhasraNoElement = document.getElementById(`khasraNo${yearCount - 1}_${i}`);
-                const prevOwnershipElement = document.getElementById(`ownership${yearCount - 1}_${i}`);
-                const prevAreaElement = document.getElementById(`area${yearCount - 1}_${i}`);
-
-                if (!prevKhasraNoElement || !prevOwnershipElement || !prevAreaElement) {
-                    console.error(`Required elements not found in row: ${i}`);
-                    continue;
-                }
-
-                const prevKhasraNo = prevKhasraNoElement.value;
-                const prevOwnership = prevOwnershipElement.value;
-                const prevArea = prevAreaElement.value;
-
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td ${i === 1 ? `rowspan="${khasraCount}" id="cyStartCell${yearCount}"` : ''}><input type="number" id="calendarYearStart${yearCount}" name="calendarYearStart${yearCount}" value="${nextCYStart}" required ${i === 1 ? '' : 'style="display:none;"'}></td>
-                    <td ${i === 1 ? `rowspan="${khasraCount}" id="cyEndCell${yearCount}"` : ''}><input type="number" id="calendarYearEnd${yearCount}" name="calendarYearEnd${yearCount}" value="${nextCYEnd}" required ${i === 1 ? '' : 'style="display:none;"'}></td>
-                    <td><input type="text" id="khasraNo${yearCount}_${i}" name="khasraNo${yearCount}_${i}" value="${prevKhasraNo}" required></td>
-                    <td><input type="text" id="ownership${yearCount}_${i}" name="ownership${yearCount}_${i}" value="${prevOwnership}" required></td>
-                    <td><input type="text" id="area${yearCount}_${i}" name="area${yearCount}_${i}" value="${prevArea}" required></td>
-                    <td><span class="delete-btn" onclick="deleteRow(this)">Delete</span></td>
-                `;
-                inputTable.appendChild(newRow);
-            }
-        }
-
-        function addMutation() {
-            mutationCount++;
-            const inputTable = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td colspan="6">
-                    <div class="mutation-row">
-                        <label for="mutationNumber${mutationCount}">Mutation Number:</label>
-                        <input type="text" id="mutationNumber${mutationCount}" name="mutationNumber${mutationCount}" required>
-                        <label for="mutationDate${mutationCount}">Date of Mutation:</label>
-                        <input type="date" id="mutationDate${mutationCount}" name="mutationDate${mutationCount}" required>
-                        <label for="mutationDescription${mutationCount}">Description of Event:</label>
-                        <textarea id="mutationDescription${mutationCount}" name="mutationDescription${mutationCount}" required></textarea>
-                        <label for="mutationChange${mutationCount}">Change:</label>
-                        <textarea id="mutationChange${mutationCount}" name="mutationChange${mutationCount}" required></textarea>
-                        <span class="delete-btn" onclick="deleteRow(this)">Delete</span>
-                    </div>
-                </td>
             `;
-            inputTable.appendChild(newRow);
+            
+            container.innerHTML = content;
+
+            // Populate the preview table
+            document.getElementById('natureOfLandPreview').innerText = natureOfLand;
+            document.getElementById('khasraNoPreview').innerText = khasraNo;
+            document.getElementById('areaHectarePreview').innerText = areaHectare;
+            document.getElementById('areaBighaPreview').innerText = areaBigha;
+            document.getElementById('khatedarPreview').innerText = khatedar;
+
+            // Generate the document and store it
+            generatedDoc = new Document({
+                sections: [{
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "STRICTLY CONFIDENTIAL",
+                                    bold: true,
+                                    size: 28,
+                                })
+                            ],
+                            alignment: AlignmentType.RIGHT
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Ref. No. " + refNo,
+                                    size: 28,
+                                }),
+                                new TextRun({
+                                    text: "\t\t\t\t\t\t\t",
+                                    size: 28,
+                                }),
+                                new TextRun({
+                                    text: "Dated: - " + formattedDate,
+                                    size: 28,
+                                })
+                            ],
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "TITLE SEARCH REPORT",
+                                    bold: true,
+                                    underline: {},
+                                    size: 28,
+                                })
+                            ],
+                            alignment: AlignmentType.CENTER
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "To,",
+                                    size: 28,
+                                })
+                            ],
+                        }),
+                        ...toAddress.split('\n').map(line => new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "\t"+line,
+                                    size: 28,
+                                })
+                            ]
+                        })),
+                        new Paragraph({
+                            indent: { left:720 },
+                            children: [
+                                new TextRun({
+                                    text: "Sub:", 
+                                    bold: true,
+                                    size: 26,
+                                }),
+                                new TextRun({
+                                    text: `\tPreliminary Title Search Report of Khasra no. ${khasraNo} of Village ${village}, Tehsil ${tehsil} and District ${district}.`,
+                                    size: 26,
+                                })
+                            ],
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "PREFACE",
+                                    bold: true,
+                                    size: 28,
+                                }),
+                            ],
+                            bullet: { level: 0 },
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "We, " + lawFirm + " have been appointed as Legal Counsel (LC) in connection with Khasra no. " + khasraNo + " of Village " + village + ", Tehsil " + tehsil + " and District " + district + ", Leased by aforesaid company for installation of Solar Power Project. In relation thereto, we have prepared the Title Search Report (“Report”) with respect to said Agriculture land (“Immoveable Properties” or “said Property”).",
+                                    size: 24,
+                                }),
+                            ],
+                            bullet: { level: 1 },
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "This title search report is addressed to and is solely for the benefit of the client and no other person shall act, rely on this report or any part thereof.",
+                                    size: 24,
+                                }),
+                            ],
+                            bullet: { level: 1 },
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "DISCLAIMER AND ASSUMPTIONS:",
+                                    bold: true,
+                                    size: 28
+                                })
+                            ],
+                            bullet: {level: 0}
+                        }),
+                        new Paragraph({
+                            indent: {left: 720},
+                            children: [
+                                new TextRun({
+                                    text: "This report has been prepared and is provided subject to specific assumptions and disclaimers outlined in Annexure-I, which is attached hereto and should be considered in conjunction with this Report. ",
+                                    size: 24
+                                }),
+                            ]
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "OBJECTIVE OF TITLE SEARCH",
+                                    bold: true,
+                                    size: 28
+                                })
+                            ],
+                            bullet: {level: 0}
+                        }),
+                        new Paragraph({
+                            indent: {left: 720},
+                            children: [
+                                new TextRun({
+                                    text: "The objective of the present report is to search and inspect true copies of documents related to the above properties and provide a detailed title report including report on the pending litigations if any of the said Property.",
+                                }),
+                            ]
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "PROCEDURE",
+                                    bold: true,
+                                    size: 28
+                                })
+                            ],
+                            bullet: {level: 0}
+                        }),
+                        new Paragraph({
+                            indent: {left: 720},
+                            children: [
+                                new TextRun({
+                                    text: "During course of Title search we were provided with true copies of documents/records related to the said property by various authorities such as sale deeds, Jamabandi records, mutation records and power of attorney and the observations made herein are based on the true copies of documents provided to us and perused during searches undertaken at the concerned offices.",
+                                }),
+                            ]
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Description, Nature and Area of land with survey/plot numbers",
+                                    bold: true,
+                                    size: 28
+                                })
+                            ],
+                            bullet: {level: 0}
+                        })
+                    ]
+                }]
+            });
+
+            // Create the table with input values
+            const table = new Table({
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph(natureOfLand)],
+                                verticalAlign: VerticalAlign.CENTER,
+                            }),
+                            new TableCell({
+                                children: [new Paragraph(khasraNo)],
+                                verticalAlign: VerticalAlign.CENTER,
+                            }),
+                            new TableCell({
+                                children: [new Paragraph(areaHectare)],
+                                verticalAlign: VerticalAlign.CENTER,
+                            }),
+                            new TableCell({
+                                children: [new Paragraph(areaBigha)],
+                                verticalAlign: VerticalAlign.CENTER,
+                            }),
+                            new TableCell({
+                                children: [new Paragraph(khatedar)],
+                                verticalAlign: VerticalAlign.CENTER,
+                            }),
+                        ],
+                    }),
+                ],
+            });
+
+            generatedDoc.addSection({
+                children: [table],
+            });
         }
 
-        function addKhasra() {
-            khasraCount++;
-            const inputTable = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
-            const cyStartCell = document.getElementById(`cyStartCell${yearCount}`);
-            const cyEndCell = document.getElementById(`cyEndCell${yearCount}`);
-
-            cyStartCell.rowSpan += 1;
-            cyEndCell.rowSpan += 1;
-
-            const prevKhasraNo = document.getElementById(`khasraNo${yearCount}_${khasraCount - 1}`).value;
-            const prevOwnership = document.getElementById(`ownership${yearCount}_${khasraCount - 1}`).value;
-            const prevArea = document.getElementById(`area${yearCount}_${khasraCount - 1}`).value;
-
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td><input type="text" id="khasraNo${yearCount}_${khasraCount}" name="khasraNo${yearCount}_${khasraCount}" value="${prevKhasraNo}" required></td>
-                <td><input type="text" id="ownership${yearCount}_${khasraCount}" name="ownership${yearCount}_${khasraCount}" value="${prevOwnership}" required></td>
-                <td><input type="text" id="area${yearCount}_${khasraCount}" name="area${yearCount}_${khasraCount}" value="${prevArea}" required></td>
-                <td><span class="delete-btn" onclick="deleteRow(this)">Delete</span></td>
-            `;
-            inputTable.appendChild(newRow);
-        }
-
-        function deleteRow(button) {
-            const row = button.parentNode.parentNode; // Adjusted to handle both regular and mutation rows
-            const table = document.getElementById('inputTable').getElementsByTagName('tbody')[0];
-            if (table.rows.length === 1) {
-                // Clear the content if it's the last row
-                row.querySelectorAll('input, textarea').forEach(input => input.value = '');
-            } else {
-                row.parentNode.removeChild(row);
+        async function download() {
+            try {
+                if (!generatedDoc) {
+                    alert('Please generate the document first.');
+                    return;
+                }
+                const { Packer } = docx;
+                const blob = await Packer.toBlob(generatedDoc);
+                saveAs(blob, "document.docx");
+            } catch (error) {
+                console.error('Error generating DOCX:', error);
+                alert('Error generating DOCX file. Please check the console for details.');
             }
         }
 
-        function generateReport() {
-            let reportTemplate = '';
+        function updateBigha() {
+            const hectareInput = document.getElementById('areaHectare');
+            const bighaInput = document.getElementById('areaBigha');
+            const hectareValue = parseFloat(hectareInput.value) || 0;
 
-            for (let y = 1; y <= yearCount; y++) {
-                const calendarYearStartElement = document.getElementById(`calendarYearStart${y}`);
-                const calendarYearEndElement = document.getElementById(`calendarYearEnd${y}`);
+            // Conversion constants
+            const biswaPerHectare = 79; // 79 biswa in 1 hectare
+            const totalBiswaInOneBigha = 20; // 1 bigha = 20 biswa
 
-                if (!calendarYearStartElement || !calendarYearEndElement) {
-                    console.error(`Year elements not found for year count ${y}`);
-                    continue;
-                }
+            // Calculate total biswa from hectares
+            const totalBiswa = Math.round(hectareValue * biswaPerHectare);
 
-                const calendarYearStart = parseInt(calendarYearStartElement.value);
-                const calendarYearEnd = parseInt(calendarYearEndElement.value);
-                const samvatYearStart = calendarYearStart + 57;
-                const samvatYearEnd = calendarYearEnd + 57;
+            // Calculate bigha and remaining biswa
+            const bighaValue = Math.floor(totalBiswa / totalBiswaInOneBigha);
+            const biswaValue = totalBiswa % totalBiswaInOneBigha;
 
-                reportTemplate += `Jamabandi of Samvat ${samvatYearStart}-${samvatYearEnd} corresponding to the Calendar Year ${calendarYearStart}-${calendarYearEnd} reflects\n`;
-
-                let khasraEntries = '';
-                let ownershipEntries = new Set();
-                let khasraFound = false;
-
-                for (let i = 1; i <= khasraCount; i++) {
-                    const khasraNoElement = document.getElementById(`khasraNo${y}_${i}`);
-                    const ownershipElement = document.getElementById(`ownership${y}_${i}`);
-                    const areaElement = document.getElementById(`area${y}_${i}`);
-
-                    if (khasraNoElement && ownershipElement && areaElement) {
-                        const khasraNo = khasraNoElement.value;
-                        const ownership = ownershipElement.value;
-                        const area = areaElement.value;
-
-                        khasraEntries += `Khasra no. ${khasraNo} area measuring ${area} Hectare\n`;
-                        ownershipEntries.add(ownership);
-                        khasraFound = true;
-                    }
-                }
-
-                if (khasraFound) {
-                    const ownershipList = Array.from(ownershipEntries).join(', ');
-                    reportTemplate += `${khasraEntries}are recorded in name of ${ownershipList} as Khatedar.\n\n`;
-                } else {
-                    reportTemplate += `No Khasra records found for this period.\n\n`;
-                }
-            }
-
-            for (let m = 1; m <= mutationCount; m++) {
-                const mutationNumberElement = document.getElementById(`mutationNumber${m}`);
-                const mutationDateElement = document.getElementById(`mutationDate${m}`);
-                const mutationDescriptionElement = document.getElementById(`mutationDescription${m}`);
-                const mutationChangeElement = document.getElementById(`mutationChange${m}`);
-
-                if (mutationNumberElement && mutationDateElement && mutationDescriptionElement && mutationChangeElement) {
-                    const mutationNumber = mutationNumberElement.value;
-                    const mutationDate = mutationDateElement.value;
-                    const mutationDescription = mutationDescriptionElement.value;
-                    const mutationChange = mutationChangeElement.value;
-
-                    reportTemplate += `• Mutation no. ${mutationNumber} dated ${mutationDate} ${mutationDescription}. Change: ${mutationChange}\n\n`;
-                } else {
-                    console.error(`Mutation elements not found for mutation count ${m}`);
-                }
-            }
-
-            document.getElementById('generatedReport').innerHTML = reportTemplate;
+            // Update bigha input with formatted value
+            bighaInput.value = `${bighaValue} bigha ${biswaValue} biswa`;
         }
     </script>
-</body>
-
+</body> 
 </html>
